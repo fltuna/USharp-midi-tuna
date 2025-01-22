@@ -1,13 +1,29 @@
 ﻿
 using System;
+using TMPro;
 using UdonSharp;
 using UnityEngine;
+using VRC.SDK3.Data;
 using VRC.SDK3.Midi;
 using VRC.SDKBase;
 using VRC.Udon;
 
 public class MidiPlayer : UdonSharpBehaviour
 {
+
+    private DataDictionary pianos = new DataDictionary();
+
+    private DataDictionary pressingKeys = new DataDictionary();
+    private DataDictionary detectedCCs = new DataDictionary();
+
+    [SerializeField] public bool debugMode = false;
+
+    [SerializeField] public TextMeshProUGUI outputTarget;
+
+    [SerializeField] public int ACCEPTABLE_MIDI_CHANNEL = 0;
+
+    [SerializeField] public int[] ACCEPTABLE_MIDI_CCs = {64};
+
 
     void Start()
     {
@@ -21,17 +37,17 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public override void MidiNoteOn(int channel, int number, int velocity)
     {
-        base.MidiNoteOn(channel, number, velocity);
+        DebugPress(channel, number, velocity);
     }
 
     public override void MidiNoteOff(int channel, int number, int velocity)
     {
-        base.MidiNoteOff(channel, number, velocity);
+        DebugRelease(channel, number, velocity);
     }
 
     public override void MidiControlChange(int channel, int number, int value)
     {
-        base.MidiControlChange(channel, number, value);
+        DebugCCChange(channel, number, value);
     }
 
 
@@ -40,9 +56,93 @@ public class MidiPlayer : UdonSharpBehaviour
 
     }
 
-    private string GetRomanizedScale()
+    private string GetRomanizedScale(int number)
     {
-        return "ERROR_TYPE_NONE";
+        string enumName = MidiScalesExtensions.GetName(number);
+        
+        if(enumName == null) {
+            return "ERROR_OUT_OF_SCALE";
+        }
+
+        return enumName;
+    }
+
+    private void DebugPress(int channel, int number, int velocity)
+    {
+        if(!ShouldDebug())
+            return;
+
+        if(channel != ACCEPTABLE_MIDI_CHANNEL)
+            return;
+
+        string romanizedScale = GetRomanizedScale(number);
+        Debug.Log("MIDI Pressed: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+        pressingKeys.Add($"{channel}-{number}-MIDI", $"MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+    }
+
+    private void DebugRelease(int channel, int number, int velocity)
+    {
+        if(!ShouldDebug())
+            return;
+
+        if(channel != ACCEPTABLE_MIDI_CHANNEL)
+            return;
+
+        string romanizedScale = GetRomanizedScale(number);
+        Debug.Log("MIDI Released: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+        pressingKeys.Remove($"{channel}-{number}-MIDI");
+    }
+
+    private void DebugCCChange(int channel, int number, int value)
+    {
+        if(!ShouldDebug())
+            return;
+
+        if(channel != ACCEPTABLE_MIDI_CHANNEL)
+            return;
+
+        if(!isCCAllowed(number))
+            return;
+
+        Debug.Log("MIDI CC Change Detected: " + $"Channel: {channel} | CC: {number} | Value: {value}");
+        pressingKeys.SetValue($"{channel}-{number}-CC", $"Channel: {channel} | CC: {number} | Value: {value}");
+
+
+        if(number == 64)
+            CCSustain(value);
+
+    }
+
+    private bool isCCAllowed(int value)
+    {
+        for(int i = 0; i < ACCEPTABLE_MIDI_CCs.Length; i++)
+        {
+            if(ACCEPTABLE_MIDI_CCs[i] == value)
+                return true;
+        }
+        return false;
+    }
+
+    private void CCSustain(int value)
+    {
+        if(value == 0)
+        {
+            CCDisableSustain();
+        }
+        else if(value == 127)
+        {
+            CCEnableSustain();
+        }
+    }
+
+    private void CCEnableSustain()
+    {
+        Debug.Log("Sustain CC detected and enabling sustain");
+    }
+
+    private void CCDisableSustain()
+    {
+        Debug.Log("Sustain CC detected and disabling sustain");
     }
 
     private void Setup()
@@ -52,6 +152,31 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void Loop()
     {
+        if(!ShouldDebug())
+            return;
+        
+        PrintDebugInfoToWorld();
+    }
 
+    private void PrintDebugInfoToWorld()
+    {
+        var keys = pressingKeys.GetKeys();
+        var outputString = "MIDI INPUTS:\n";
+
+
+        foreach(var key in keys.ToArray())
+        {
+            if(!pressingKeys.TryGetValue(key, out var reference))
+                continue;
+
+            outputString += reference.String + "\n";
+        }
+
+        outputTarget.text = outputString;
+    }
+
+    private bool ShouldDebug()
+    {
+        return Utilities.IsValid(outputTarget) && debugMode;
     }
 }
