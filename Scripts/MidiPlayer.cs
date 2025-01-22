@@ -164,6 +164,9 @@ public class MidiPlayer : UdonSharpBehaviour
         Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
 
         audioSource.priority = UpdateSoundPriority();
+        // TODO()
+        // Use PlayOneShot() instead Play() for non clipped sound.
+        // audioSource.PlayOneShot(audioSource.clip);
         audioSource.Play();
     }
 
