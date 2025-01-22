@@ -21,12 +21,14 @@ public class MidiPlayer : UdonSharpBehaviour
     [
         SerializeField, 
         Header("Use individual samples instead of pitched C5 sound?"),
-        Tooltip("When this enabled, the program will use pitched C5 sound instead of individual samples")
+        Tooltip("When this disabled, the program will use pitched C5 sound instead of individual samples")
     ]
     public bool useIndividualSoundSources = false;
 
     [SerializeField, Header("Parent of audio sources objects")]
     public GameObject audioSourcesParent;
+
+    private DataDictionary individualAudioSources = new DataDictionary();
 
 
     [SerializeField, Header("Enable debug mode?")]
@@ -42,6 +44,10 @@ public class MidiPlayer : UdonSharpBehaviour
     public int[] ACCEPTABLE_MIDI_CCs = {64};
 
 
+    [UdonSynced(UdonSyncMode.None)]
+    // {Channel, number, velocity or value, MIDIType}
+    private sbyte[] LAST_INPUTTED_MIDI = {-1, -1, -1, -1};
+
     void Start()
     {
         Setup();
@@ -54,23 +60,58 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public override void MidiNoteOn(int channel, int number, int velocity)
     {
-        DebugPress(channel, number, velocity);
+        EmulateMidiNoteOn(channel, number, velocity);
     }
 
     public override void MidiNoteOff(int channel, int number, int velocity)
     {
-        DebugRelease(channel, number, velocity);
+        EmulateMidiNoteOff(channel, number, velocity);
     }
 
     public override void MidiControlChange(int channel, int number, int value)
+    {
+        EmulateMidiControlChange(channel, number, value);
+    }
+
+    public void EmulateMidiNoteOn(int channel, int number, int velocity)
+    {
+        DebugPress(channel, number, velocity);
+        FindAndPlay(number, velocity);
+    }
+
+    private void EmulateMidiNoteOff(int channel, int number, int velocity)
+    {
+        DebugRelease(channel, number, velocity);
+    }
+
+    private void EmulateMidiControlChange(int channel, int number, int value)
     {
         DebugCCChange(channel, number, value);
     }
 
 
-    private void FindAndPlay()
+    private void FindAndPlay(int number, int velocity)
     {
+        string romanizedScale;
+        float playBackPitch = 1.0F;
 
+        if(useIndividualSoundSources) {
+            romanizedScale = GetRomanizedScale(number);
+        }
+        else {
+            romanizedScale = "C5";
+            playBackPitch = MidiPitchConverter.MidiNoteToPitch(number);
+        }
+
+        if(!individualAudioSources.TryGetValue(romanizedScale, out var audioSourceComponent)) {
+            Debug.LogWarning($"Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
+            return;
+        }
+
+        AudioSource audioSource = (AudioSource) audioSourceComponent.Reference;
+
+        audioSource.pitch = playBackPitch;
+        audioSource.Play();
     }
 
     private string GetRomanizedScale(int number)
@@ -168,7 +209,9 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void Setup()
     {
-
+        foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
+            individualAudioSources.Add($"{child.gameObject.name}", child);
+        }
     }
 
     private void Loop()
@@ -200,4 +243,11 @@ public class MidiPlayer : UdonSharpBehaviour
     {
         return Utilities.IsValid(debugLogOutputTarget) && debugMode;
     }
+}
+
+public enum MIDIType
+{
+    PRESS = 0,
+    RELEASE,
+    CC
 }
