@@ -16,13 +16,30 @@ public class MidiPlayer : UdonSharpBehaviour
     private DataDictionary pressingKeys = new DataDictionary();
     private DataDictionary detectedCCs = new DataDictionary();
 
-    [SerializeField] public bool debugMode = false;
 
-    [SerializeField] public TextMeshProUGUI outputTarget;
+    // When this
+    [
+        SerializeField, 
+        Header("Use individual samples instead of pitched C5 sound?"),
+        Tooltip("When this enabled, the program will use pitched C5 sound instead of individual samples")
+    ]
+    public bool useIndividualSoundSources = false;
 
-    [SerializeField] public int ACCEPTABLE_MIDI_CHANNEL = 0;
+    [SerializeField, Header("Parent of audio sources objects")]
+    public GameObject audioSourcesParent;
 
-    [SerializeField] public int[] ACCEPTABLE_MIDI_CCs = {64};
+
+    [SerializeField, Header("Enable debug mode?")]
+    public bool debugMode = false;
+
+    [SerializeField, Header("TextMeshPro object for output the debug information")]
+    public TextMeshProUGUI debugLogOutputTarget;
+
+    [SerializeField, Header("What midi channel is acceptable for input?")]
+    public int ACCEPTABLE_MIDI_CHANNEL = 0;
+
+    [SerializeField, Header("What CC is acceptable for input?")]
+    public int[] ACCEPTABLE_MIDI_CCs = {64};
 
 
     void Start()
@@ -61,7 +78,7 @@ public class MidiPlayer : UdonSharpBehaviour
         string enumName = MidiScalesExtensions.GetName(number);
         
         if(enumName == null) {
-            return "ERROR_OUT_OF_SCALE";
+            return "ERROR_OUT_OF_SCALES";
         }
 
         return enumName;
@@ -176,11 +193,11 @@ public class MidiPlayer : UdonSharpBehaviour
             outputString += reference.String + "\n";
         }
 
-        outputTarget.text = outputString;
+        debugLogOutputTarget.text = outputString;
     }
 
     private bool ShouldDebug()
     {
-        return Utilities.IsValid(outputTarget) && debugMode;
+        return Utilities.IsValid(debugLogOutputTarget) && debugMode;
     }
 }
