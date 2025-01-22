@@ -58,18 +58,61 @@ public class MidiPlayer : UdonSharpBehaviour
         Loop();
     }
 
+    public override void OnDeserialization()
+    {
+        sbyte channel = LAST_INPUTTED_MIDI[0];
+        sbyte number = LAST_INPUTTED_MIDI[1];
+        sbyte value = LAST_INPUTTED_MIDI[2];
+        MIDIType midiType = (MIDIType) LAST_INPUTTED_MIDI[3];
+
+
+
+        if(
+            channel == -1 ||
+            number == -1 ||
+            value == -1
+        ) {
+            ResetLastInputtedMidi();
+            Debug.LogError("Failed to obtain synced midi input from deserialization method! Cancelling the playback!");
+            return;
+        }
+
+        ResetLastInputtedMidi();
+
+        switch(midiType) {
+            case MIDIType.PRESS:
+                EmulateMidiNoteOn(channel, number, value);
+                break;
+
+            case MIDIType.RELEASE:
+                EmulateMidiNoteOff(channel, number, value);
+                break;
+
+            case MIDIType.CC:
+                EmulateMidiNoteOn(channel, number, value);
+                break;
+
+            default:
+                Debug.LogError("Unknown MIDI type is specified or failed to sync input between master and client!");
+                break;
+        }
+    }
+
     public override void MidiNoteOn(int channel, int number, int velocity)
     {
+        SyncMidiInput(channel, number, velocity, MIDIType.PRESS);
         EmulateMidiNoteOn(channel, number, velocity);
     }
 
     public override void MidiNoteOff(int channel, int number, int velocity)
     {
+        SyncMidiInput(channel, number, velocity, MIDIType.RELEASE);
         EmulateMidiNoteOff(channel, number, velocity);
     }
 
     public override void MidiControlChange(int channel, int number, int value)
     {
+        SyncMidiInput(channel, number, value, MIDIType.CC);
         EmulateMidiControlChange(channel, number, value);
     }
 
@@ -109,6 +152,8 @@ public class MidiPlayer : UdonSharpBehaviour
         }
 
         AudioSource audioSource = (AudioSource) audioSourceComponent.Reference;
+
+        Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {playBackPitch}");
 
         audioSource.pitch = playBackPitch;
         audioSource.Play();
@@ -173,6 +218,24 @@ public class MidiPlayer : UdonSharpBehaviour
         if(number == 64)
             CCSustain(value);
 
+    }
+
+    private void SyncMidiInput(int channel, int number, int value, MIDIType midiType)
+    {
+        LAST_INPUTTED_MIDI[0] = (sbyte) channel;
+        LAST_INPUTTED_MIDI[1] = (sbyte) number;
+        LAST_INPUTTED_MIDI[2] = (sbyte) value;
+        LAST_INPUTTED_MIDI[3] = (sbyte) MIDIType.PRESS;
+        RequestSerialization();
+        ResetLastInputtedMidi();
+    }
+
+    private void ResetLastInputtedMidi()
+    {
+        LAST_INPUTTED_MIDI[0] = -1;
+        LAST_INPUTTED_MIDI[1] = -1;
+        LAST_INPUTTED_MIDI[2] = -1;
+        LAST_INPUTTED_MIDI[3] = -1;
     }
 
     private bool isCCAllowed(int value)
