@@ -84,6 +84,8 @@ public class MidiPlayer : UdonSharpBehaviour
     //
     private const string DISPOSED_AUDIO_SOURCE_OBJECT_NAME = "tuna-midi_dispose-target";
 
+    private const string LOG_PREFIX = "[Tuna's U# Midi]";
+
 
     private AudioSource[] bassVoices = new AudioSource[RESERVED_SLOTS_BASS];
     private AudioSource[] otherVoices = new AudioSource[MAX_VOICES-RESERVED_SLOTS_BASS];
@@ -118,7 +120,7 @@ public class MidiPlayer : UdonSharpBehaviour
             value == -1
         ) {
             ResetLastInputtedMidi();
-            Debug.LogError("Failed to obtain synced midi input from deserialization method! Cancelling the playback!");
+            Debug.LogError($"{LOG_PREFIX} Failed to obtain synced midi input from deserialization method! Cancelling the playback!");
             return;
         }
 
@@ -138,7 +140,7 @@ public class MidiPlayer : UdonSharpBehaviour
                 break;
 
             default:
-                Debug.LogError("Unknown MIDI type is specified or failed to sync input between master and client!");
+                Debug.LogError($"{LOG_PREFIX} Unknown MIDI type is specified or failed to sync input between master and client!");
                 break;
         }
     }
@@ -212,12 +214,12 @@ public class MidiPlayer : UdonSharpBehaviour
         AudioSource audioSource = GetAudioSourceFromRomanizedScale(romanizedScale);
 
         if(audioSource == null) {
-            Debug.LogWarning($"Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
+            Debug.LogWarning($"{LOG_PREFIX} Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
             return;
         }
 
         if(ShouldDebug() && debugMode.HasDebugType(DebugType.CONSOLE)) {
-            Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
+            Debug.Log($"{LOG_PREFIX} MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
         }
 
 
@@ -254,7 +256,8 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public void InstantiatedAudioSourceGC()
     {
-        Debug.Log("GC Started");
+        if(debugMode.HasDebugType(DebugType.GC_INFO))
+            Debug.Log($"{LOG_PREFIX} GC Started");
 
         int objectsGarbageCollected = 0;
 
@@ -265,25 +268,11 @@ public class MidiPlayer : UdonSharpBehaviour
             }
         }
 
-        Debug.Log($"GC Done. Destroyed {objectsGarbageCollected} object(s). sending CustomEvent to do GC recursively");
+        if(debugMode.HasDebugType(DebugType.GC_INFO))
+            Debug.Log($"{LOG_PREFIX} GC Done. Destroyed {objectsGarbageCollected} object(s). sending CustomEvent to do GC recursively");
+
         SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
     }
-
-    // private void FindAndStop(int number)
-    // {
-    //     string romanizedScale = GetRomanizedScale(number);
-
-    //     AudioSource audioSource = GetAudioSourceFromRomanizedScale(romanizedScale);
-
-    //     if(audioSource == null) {
-    //         Debug.LogWarning($"Failed to get AudioSource component of {romanizedScale}. cancelling the playback stop.");
-    //         return;
-    //     }
-
-    //     Debug.Log($"MIDI Stopping: scale: {romanizedScale}");
-
-    //     // audioSource.Stop();
-    // }
 
     private AudioSource GetAudioSourceFromRomanizedScale(string romanizedScale)
     {
@@ -324,7 +313,7 @@ public class MidiPlayer : UdonSharpBehaviour
         string romanizedScale = GetRomanizedScale(number);
 
         if(debugMode.HasDebugType(DebugType.CONSOLE)) {
-            Debug.Log("MIDI Pressed: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+            Debug.Log($"{LOG_PREFIX} MIDI Pressed: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
         }
 
 
@@ -343,7 +332,7 @@ public class MidiPlayer : UdonSharpBehaviour
         string romanizedScale = GetRomanizedScale(number);
 
         if(debugMode.HasDebugType(DebugType.CONSOLE)) {
-            Debug.Log("MIDI Released: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+            Debug.Log($"{LOG_PREFIX} MIDI Released: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
         }
 
         pressingKeys.Remove($"{channel}-{number}-MIDI");
@@ -355,7 +344,7 @@ public class MidiPlayer : UdonSharpBehaviour
             return;
 
         if(debugMode.HasDebugType(DebugType.CONSOLE)) {
-            Debug.Log("MIDI CC Change Detected: " + $"Channel: {channel} | CC: {number} | Value: {value}");
+            Debug.Log($"{LOG_PREFIX} MIDI CC Change Detected: " + $"Channel: {channel} | CC: {number} | Value: {value}");
         }
 
         pressingKeys.SetValue($"{channel}-{number}-CC", $"Channel: {channel} | CC: {number} | Value: {value}");
@@ -404,25 +393,28 @@ public class MidiPlayer : UdonSharpBehaviour
     private void CCEnableSustain()
     {
         if(debugMode.HasDebugType(DebugType.CONSOLE)) {
-            Debug.Log("Sustain CC detected and enabling sustain");
+            Debug.Log($"{LOG_PREFIX} Sustain CC detected and enabling sustain");
         }
     }
 
     private void CCDisableSustain()
     {
         if(debugMode.HasDebugType(DebugType.CONSOLE)) {
-            Debug.Log("Sustain CC detected and disabling sustain");
+            Debug.Log($"{LOG_PREFIX} Sustain CC detected and disabling sustain");
         }
     }
 
     private void Setup()
     {
+        Debug.Log($"{LOG_PREFIX} Initializing script...");
         if(useIndividualSoundSources) {
+            Debug.Log($"{LOG_PREFIX} We are using individual sound samples!");
             foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
                 individualAudioSources.Add($"{child.gameObject.name}", child);
             }
         }
         else {
+            Debug.Log($"{LOG_PREFIX} We are using pitched sound samples!");
             GameObject instantiateTarget = null;
 
             foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
@@ -433,7 +425,7 @@ public class MidiPlayer : UdonSharpBehaviour
             }
 
             if(!Utilities.IsValid(instantiateTarget)) {
-                Debug.LogError("Failed to find C5 AudioSource component! Stopping script!");
+                Debug.LogError($"{LOG_PREFIX} Failed to find C5 AudioSource component! Stopping script!");
                 return;
             }
 
@@ -452,7 +444,7 @@ public class MidiPlayer : UdonSharpBehaviour
         }
         SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
         isScriptInitialized = true;
-        Debug.Log("Script has been initialized successfully!");
+        Debug.Log($"{LOG_PREFIX} Script has been initialized successfully!");
     }
 
     private void Loop()
@@ -508,6 +500,7 @@ public enum DebugType
     NONE = 0,
     CONSOLE = 1,
     WORLD_TEXT = 2,
+    GC_INFO = 4,
 }
 
 public static class DebugTypeExtension
