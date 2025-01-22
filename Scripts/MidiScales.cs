@@ -96,7 +96,18 @@ public enum MidiScales
     A7,
     AS7,
     B7,
-    C8
+    C8,
+    CS8,
+    D8,
+    DS8,
+    E8,
+    F8,
+    FS8,
+    G8,
+    GS8,
+    A8,
+    AS8,
+    B8
 }
 public static class MidiScalesExtensions
 {
@@ -201,6 +212,17 @@ public static class MidiScalesExtensions
             case (int)MidiScales.AS7: return "A#7";
             case (int)MidiScales.B7: return "B7";
             case (int)MidiScales.C8: return "C8";
+            case (int)MidiScales.CS8: return "C#8";
+            case (int)MidiScales.D8: return "D8";
+            case (int)MidiScales.DS8: return "D#8";
+            case (int)MidiScales.E8: return "E8";
+            case (int)MidiScales.F8: return "F8";
+            case (int)MidiScales.FS8: return "F#8";
+            case (int)MidiScales.G8: return "G8";
+            case (int)MidiScales.GS8: return "G#8";
+            case (int)MidiScales.A8: return "A8";
+            case (int)MidiScales.AS8: return "A#8";
+            case (int)MidiScales.B8: return "B8";
             default: return null;
         }
     }
