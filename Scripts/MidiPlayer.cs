@@ -48,6 +48,11 @@ public class MidiPlayer : UdonSharpBehaviour
     // {Channel, number, velocity or value, MIDIType}
     private sbyte[] LAST_INPUTTED_MIDI = {-1, -1, -1, -1};
 
+
+    private byte globalCurrentSoundPriority = 255;
+
+    private bool isScriptInitialized = false;
+
     void Start()
     {
         Setup();
@@ -60,6 +65,9 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public override void OnDeserialization()
     {
+        if(!isScriptInitialized)
+            return;
+
         sbyte channel = LAST_INPUTTED_MIDI[0];
         sbyte number = LAST_INPUTTED_MIDI[1];
         sbyte value = LAST_INPUTTED_MIDI[2];
@@ -100,18 +108,27 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public override void MidiNoteOn(int channel, int number, int velocity)
     {
+        if(!isScriptInitialized)
+            return;
+
         SyncMidiInput(channel, number, velocity, MIDIType.PRESS);
         EmulateMidiNoteOn(channel, number, velocity);
     }
 
     public override void MidiNoteOff(int channel, int number, int velocity)
     {
+        if(!isScriptInitialized)
+            return;
+
         SyncMidiInput(channel, number, velocity, MIDIType.RELEASE);
         EmulateMidiNoteOff(channel, number, velocity);
     }
 
     public override void MidiControlChange(int channel, int number, int value)
     {
+        if(!isScriptInitialized)
+            return;
+
         SyncMidiInput(channel, number, value, MIDIType.CC);
         EmulateMidiControlChange(channel, number, value);
     }
@@ -135,16 +152,7 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void FindAndPlay(int number, int velocity)
     {
-        string romanizedScale;
-        float playBackPitch = 1.0F;
-
-        if(useIndividualSoundSources) {
-            romanizedScale = GetRomanizedScale(number);
-        }
-        else {
-            romanizedScale = "C5";
-            playBackPitch = MidiPitchConverter.MidiNoteToPitch(number);
-        }
+        string romanizedScale = GetRomanizedScale(number);
 
         if(!individualAudioSources.TryGetValue(romanizedScale, out var audioSourceComponent)) {
             Debug.LogWarning($"Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
@@ -153,10 +161,22 @@ public class MidiPlayer : UdonSharpBehaviour
 
         AudioSource audioSource = (AudioSource) audioSourceComponent.Reference;
 
-        Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {playBackPitch}");
+        Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
 
-        audioSource.pitch = playBackPitch;
+        audioSource.priority = UpdateSoundPriority();
         audioSource.Play();
+    }
+
+    private byte UpdateSoundPriority()
+    {
+        if(globalCurrentSoundPriority == byte.MaxValue){
+            globalCurrentSoundPriority = 0;
+        }
+        else {
+            globalCurrentSoundPriority++;
+        }
+        pressingKeys.SetValue("CurrentPriority", $"Global Current Sound Priority: {globalCurrentSoundPriority}");
+        return globalCurrentSoundPriority;
     }
 
     private string GetRomanizedScale(int number)
@@ -272,9 +292,41 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void Setup()
     {
-        foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
-            individualAudioSources.Add($"{child.gameObject.name}", child);
+        if(useIndividualSoundSources) {
+            foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
+                individualAudioSources.Add($"{child.gameObject.name}", child);
+            }
         }
+        else {
+            GameObject instantiateTarget = null;
+
+            foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
+                if(child.gameObject.name.Equals("C5", StringComparison.OrdinalIgnoreCase)) {
+                    instantiateTarget = child.gameObject;
+                    break;
+                }
+            }
+
+            if(!Utilities.IsValid(instantiateTarget)) {
+                Debug.LogError("Failed to find C5 AudioSource component! Stopping script!");
+                return;
+            }
+
+            for(int i = 0; i < (int)MidiScales.B8; i++) {
+                string romanizedScale = GetRomanizedScale(i);
+                GameObject instantiatedGameObject = Instantiate(instantiateTarget);
+                instantiatedGameObject.name = romanizedScale;
+
+                AudioSource instantiatedAudioSource = instantiatedGameObject.GetComponent<AudioSource>();
+
+                float playBackPitch = MidiPitchConverter.MidiNoteToPitch(i);
+                instantiatedAudioSource.pitch = playBackPitch;
+                individualAudioSources.Add($"{instantiatedAudioSource.gameObject.name}", instantiatedAudioSource);
+            }
+            
+        }
+        isScriptInitialized = true;
+        Debug.Log("Script has been initialized successfully!");
     }
 
     private void Loop()
