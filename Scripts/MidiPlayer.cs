@@ -1,4 +1,5 @@
 ﻿
+using System;
 using UdonSharp;
 using UnityEngine;
 using VRC.SDK3.Midi;
@@ -7,8 +8,6 @@ using VRC.Udon;
 
 public class MidiPlayer : UdonSharpBehaviour
 {
-
-    [SerializeField] private VRCMidiPlayer player;
 
     void Start()
     {
@@ -22,7 +21,6 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public override void MidiNoteOn(int channel, int number, int velocity)
     {
-
         base.MidiNoteOn(channel, number, velocity);
     }
 
@@ -31,7 +29,21 @@ public class MidiPlayer : UdonSharpBehaviour
         base.MidiNoteOff(channel, number, velocity);
     }
 
+    public override void MidiControlChange(int channel, int number, int value)
+    {
+        base.MidiControlChange(channel, number, value);
+    }
 
+
+    private void FindAndPlay()
+    {
+
+    }
+
+    private string GetRomanizedScale()
+    {
+        return "ERROR_TYPE_NONE";
+    }
 
     private void Setup()
     {
