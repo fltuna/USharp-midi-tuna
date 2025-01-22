@@ -1,5 +1,6 @@
 ﻿
 using System;
+using System.Collections;
 using TMPro;
 using UdonSharp;
 using UnityEngine;
@@ -43,6 +44,9 @@ public class MidiPlayer : UdonSharpBehaviour
     [SerializeField, Header("What CC is acceptable for input?")]
     public int[] ACCEPTABLE_MIDI_CCs = {64};
 
+    [SerializeField, Header("Interval of Garbage Collection for disposed audio source objects. (seconds)")]
+    public float DISPOSED_AUDIO_SOURCE_GC_TIME = 15;
+
 
     [UdonSynced(UdonSyncMode.None)]
     // {Channel, number, velocity or value, MIDIType}
@@ -54,6 +58,37 @@ public class MidiPlayer : UdonSharpBehaviour
     private bool isScriptInitialized = false;
 
     private byte notesPlayingInSameTime = 0;
+
+
+
+    //
+    // How many bass sound should be reserved?
+    // VRChat sound playback limit is around 30~40, and need to stop oldest sound.
+    // But stopping basses frequently is are make sound ugly, so reserve some slots to don't stop the basses.
+    //
+    private const int RESERVED_SLOTS_BASS = 5;
+
+    //
+    // How many voices allowed to play in same time?
+    // VRChat sound playback limit is around 30~40, and need to stop oldest sound.
+    //
+    private const int MAX_VOICES = 35;
+
+    //
+    // MIDI number lower than this value is recognized as BASS in runtime.
+    //
+    public const int BASS_MIDI_CUTOFF = 48;
+
+    //
+    // Used for identifying the disposed audio source object.
+    //
+    private const string DISPOSED_AUDIO_SOURCE_OBJECT_NAME = "tuna-midi_dispose-target";
+
+
+    private AudioSource[] bassVoices = new AudioSource[RESERVED_SLOTS_BASS];
+    private AudioSource[] otherVoices = new AudioSource[MAX_VOICES-RESERVED_SLOTS_BASS];
+    private int bassVoiceIndex = 0;
+    private int otherVoicesIndex = 0;
 
     void Start()
     {
@@ -137,15 +172,16 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public void EmulateMidiNoteOn(int channel, int number, int velocity)
     {
+        notesPlayingInSameTime++;
         DebugPress(channel, number, velocity);
         FindAndPlay(number, velocity);
-        notesPlayingInSameTime++;
     }
 
     private void EmulateMidiNoteOff(int channel, int number, int velocity)
     {
-        DebugRelease(channel, number, velocity);
         notesPlayingInSameTime--;
+        DebugRelease(channel, number, velocity);
+        // FindAndStop(number);
     }
 
     private void EmulateMidiControlChange(int channel, int number, int value)
@@ -158,12 +194,12 @@ public class MidiPlayer : UdonSharpBehaviour
     {
         string romanizedScale = GetRomanizedScale(number);
 
-        if(!individualAudioSources.TryGetValue(romanizedScale, out var audioSourceComponent)) {
+        AudioSource audioSource = GetAudioSourceFromRomanizedScale(romanizedScale);
+
+        if(audioSource == null) {
             Debug.LogWarning($"Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
             return;
         }
-
-        AudioSource audioSource = (AudioSource) audioSourceComponent.Reference;
 
         Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
 
@@ -171,7 +207,67 @@ public class MidiPlayer : UdonSharpBehaviour
         // TODO()
         // Use PlayOneShot() instead Play() for non clipped sound.
         // audioSource.PlayOneShot(audioSource.clip);
+
+        GameObject cloned = Instantiate(audioSource.gameObject);
+        AudioSource clonedAudioSource = cloned.GetComponent<AudioSource>();
+
+        
+
+        if(number < BASS_MIDI_CUTOFF) {
+            AudioSource currentVoice = bassVoices[bassVoiceIndex];
+            if(currentVoice != null) {
+                currentVoice.gameObject.name = DISPOSED_AUDIO_SOURCE_OBJECT_NAME;
+            }
+            bassVoices[bassVoiceIndex] = clonedAudioSource;
+            bassVoiceIndex = (bassVoiceIndex + 1) % RESERVED_SLOTS_BASS;
+        } else {
+            AudioSource currentVoice = otherVoices[otherVoicesIndex];
+            if(currentVoice != null) {
+                currentVoice.gameObject.name = DISPOSED_AUDIO_SOURCE_OBJECT_NAME;
+            }
+            otherVoices[otherVoicesIndex] = clonedAudioSource;
+            otherVoicesIndex = (otherVoicesIndex + 1) % (MAX_VOICES-RESERVED_SLOTS_BASS);
+        }
+
         audioSource.Play();
+    }
+
+    private void InstantiatedAudioSourceGC()
+    {
+        Debug.Log("GC Started");
+
+        foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
+            if(child.gameObject.name.Equals(DISPOSED_AUDIO_SOURCE_OBJECT_NAME)) {
+                Destroy(child.gameObject);
+            }
+        }
+
+        Debug.Log("GC Done sending CustomEvent to do GC recursively");
+        SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
+    }
+
+    // private void FindAndStop(int number)
+    // {
+    //     string romanizedScale = GetRomanizedScale(number);
+
+    //     AudioSource audioSource = GetAudioSourceFromRomanizedScale(romanizedScale);
+
+    //     if(audioSource == null) {
+    //         Debug.LogWarning($"Failed to get AudioSource component of {romanizedScale}. cancelling the playback stop.");
+    //         return;
+    //     }
+
+    //     Debug.Log($"MIDI Stopping: scale: {romanizedScale}");
+
+    //     // audioSource.Stop();
+    // }
+
+    private AudioSource GetAudioSourceFromRomanizedScale(string romanizedScale)
+    {
+        if(!individualAudioSources.TryGetValue(romanizedScale, out var audioSourceComponent)) 
+            return null;
+
+        return (AudioSource) audioSourceComponent.Reference;
     }
 
     private byte UpdateSoundPriority()
