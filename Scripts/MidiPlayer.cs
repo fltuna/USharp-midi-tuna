@@ -77,6 +77,10 @@ public class MidiPlayer : UdonSharpBehaviour
 
         string romanizedScale = GetRomanizedScale(number);
         Debug.Log("MIDI Pressed: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+
+        if(pressingKeys.ContainsKey($"{channel}-{number}-MIDI"))
+            return;
+
         pressingKeys.Add($"{channel}-{number}-MIDI", $"MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
     }
 
