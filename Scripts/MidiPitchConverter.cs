@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class MidiPitchConverter
 {
-    private const float MinPitch = 0f;
+    private const float MinPitch = 0.03125f;
     private const float MaxPitch = 15.10199f;
     private const int BaseC = 60; // C5
     private const int NotesPerOctave = 12;
