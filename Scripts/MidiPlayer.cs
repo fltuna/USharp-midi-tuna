@@ -288,7 +288,7 @@ public class MidiPlayer : UdonSharpBehaviour
         else {
             globalCurrentSoundPriority++;
         }
-        pressingKeys.SetValue("CurrentPriority", $"Global Current Sound Priority: {globalCurrentSoundPriority} | Notes playing in same time: {notesPlayingInSameTime}");
+        pressingKeys.SetValue("CurrentPriority", $"Global Current Sound Priority: {globalCurrentSoundPriority}");
         return globalCurrentSoundPriority;
     }
 
@@ -470,11 +470,18 @@ public class MidiPlayer : UdonSharpBehaviour
 
 
         var keys = pressingKeys.GetKeys();
+        pressingKeys.TryGetValue("CurrentPriority", out var currentPriorityString);
+
         var outputString = "MIDI INPUTS:\n";
+        outputString += currentPriorityString + "\n";
+        outputString += $"Current MIDI inputs: {notesPlayingInSameTime}" + "\n";
 
 
         foreach(var key in keys.ToArray())
         {
+            if(key.String.Equals("CurrentPriority", StringComparison.OrdinalIgnoreCase))
+                continue;
+
             if(!pressingKeys.TryGetValue(key, out var reference))
                 continue;
 
