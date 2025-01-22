@@ -33,7 +33,7 @@ public class MidiPlayer : UdonSharpBehaviour
 
 
     [SerializeField, Header("Enable debug mode?")]
-    public bool debugMode = false;
+    public DebugType debugMode = DebugType.NONE;
 
     [SerializeField, Header("TextMeshPro object for output the debug information")]
     public TextMeshProUGUI debugLogOutputTarget;
@@ -172,6 +172,9 @@ public class MidiPlayer : UdonSharpBehaviour
 
     public void EmulateMidiNoteOn(int channel, int number, int velocity)
     {
+        if(channel != ACCEPTABLE_MIDI_CHANNEL)
+            return;
+
         notesPlayingInSameTime++;
         DebugPress(channel, number, velocity);
         FindAndPlay(number, velocity);
@@ -179,6 +182,9 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void EmulateMidiNoteOff(int channel, int number, int velocity)
     {
+        if(channel != ACCEPTABLE_MIDI_CHANNEL)
+            return;
+
         notesPlayingInSameTime--;
         DebugRelease(channel, number, velocity);
         // FindAndStop(number);
@@ -186,6 +192,15 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void EmulateMidiControlChange(int channel, int number, int value)
     {
+        if(channel != ACCEPTABLE_MIDI_CHANNEL)
+            return;
+
+        if(!isCCAllowed(number))
+            return;
+
+        if(number == 64)
+            CCSustain(value);
+
         DebugCCChange(channel, number, value);
     }
 
@@ -201,7 +216,10 @@ public class MidiPlayer : UdonSharpBehaviour
             return;
         }
 
-        Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
+        if(ShouldDebug() && debugMode.HasDebugType(DebugType.CONSOLE)) {
+            Debug.Log($"MIDI Playing: scale: {romanizedScale} | pitch: {audioSource.pitch}");
+        }
+
 
         audioSource.priority = UpdateSoundPriority();
         // TODO()
@@ -210,6 +228,7 @@ public class MidiPlayer : UdonSharpBehaviour
 
         GameObject cloned = Instantiate(audioSource.gameObject);
         AudioSource clonedAudioSource = cloned.GetComponent<AudioSource>();
+        cloned.transform.SetParent(audioSourcesParent.transform);
 
         
 
@@ -232,17 +251,21 @@ public class MidiPlayer : UdonSharpBehaviour
         audioSource.Play();
     }
 
-    private void InstantiatedAudioSourceGC()
+
+    public void InstantiatedAudioSourceGC()
     {
         Debug.Log("GC Started");
+
+        int objectsGarbageCollected = 0;
 
         foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
             if(child.gameObject.name.Equals(DISPOSED_AUDIO_SOURCE_OBJECT_NAME)) {
                 Destroy(child.gameObject);
+                objectsGarbageCollected++;
             }
         }
 
-        Debug.Log("GC Done sending CustomEvent to do GC recursively");
+        Debug.Log($"GC Done. Destroyed {objectsGarbageCollected} object(s). sending CustomEvent to do GC recursively");
         SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
     }
 
@@ -298,11 +321,12 @@ public class MidiPlayer : UdonSharpBehaviour
         if(!ShouldDebug())
             return;
 
-        if(channel != ACCEPTABLE_MIDI_CHANNEL)
-            return;
-
         string romanizedScale = GetRomanizedScale(number);
-        Debug.Log("MIDI Pressed: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+
+        if(debugMode.HasDebugType(DebugType.CONSOLE)) {
+            Debug.Log("MIDI Pressed: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+        }
+
 
         if(pressingKeys.ContainsKey($"{channel}-{number}-MIDI"))
             return;
@@ -315,11 +339,13 @@ public class MidiPlayer : UdonSharpBehaviour
         if(!ShouldDebug())
             return;
 
-        if(channel != ACCEPTABLE_MIDI_CHANNEL)
-            return;
 
         string romanizedScale = GetRomanizedScale(number);
-        Debug.Log("MIDI Released: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+
+        if(debugMode.HasDebugType(DebugType.CONSOLE)) {
+            Debug.Log("MIDI Released: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
+        }
+
         pressingKeys.Remove($"{channel}-{number}-MIDI");
     }
 
@@ -328,19 +354,11 @@ public class MidiPlayer : UdonSharpBehaviour
         if(!ShouldDebug())
             return;
 
-        if(channel != ACCEPTABLE_MIDI_CHANNEL)
-            return;
+        if(debugMode.HasDebugType(DebugType.CONSOLE)) {
+            Debug.Log("MIDI CC Change Detected: " + $"Channel: {channel} | CC: {number} | Value: {value}");
+        }
 
-        if(!isCCAllowed(number))
-            return;
-
-        Debug.Log("MIDI CC Change Detected: " + $"Channel: {channel} | CC: {number} | Value: {value}");
         pressingKeys.SetValue($"{channel}-{number}-CC", $"Channel: {channel} | CC: {number} | Value: {value}");
-
-
-        if(number == 64)
-            CCSustain(value);
-
     }
 
     private void SyncMidiInput(int channel, int number, int value, MIDIType midiType)
@@ -385,12 +403,16 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void CCEnableSustain()
     {
-        Debug.Log("Sustain CC detected and enabling sustain");
+        if(debugMode.HasDebugType(DebugType.CONSOLE)) {
+            Debug.Log("Sustain CC detected and enabling sustain");
+        }
     }
 
     private void CCDisableSustain()
     {
-        Debug.Log("Sustain CC detected and disabling sustain");
+        if(debugMode.HasDebugType(DebugType.CONSOLE)) {
+            Debug.Log("Sustain CC detected and disabling sustain");
+        }
     }
 
     private void Setup()
@@ -428,6 +450,7 @@ public class MidiPlayer : UdonSharpBehaviour
             }
             
         }
+        SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
         isScriptInitialized = true;
         Debug.Log("Script has been initialized successfully!");
     }
@@ -441,7 +464,16 @@ public class MidiPlayer : UdonSharpBehaviour
     }
 
     private void PrintDebugInfoToWorld()
-    {
+    {       
+        if(!ShouldDebug())
+            return;
+
+        if(!debugMode.HasDebugType(DebugType.WORLD_TEXT)) {
+            debugLogOutputTarget.text = "";
+            return;
+        }
+
+
         var keys = pressingKeys.GetKeys();
         var outputString = "MIDI INPUTS:\n";
 
@@ -459,7 +491,7 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private bool ShouldDebug()
     {
-        return Utilities.IsValid(debugLogOutputTarget) && debugMode;
+        return Utilities.IsValid(debugLogOutputTarget) && debugMode != DebugType.NONE;
     }
 }
 
@@ -468,4 +500,20 @@ public enum MIDIType
     PRESS = 0,
     RELEASE,
     CC
+}
+
+[Flags]
+public enum DebugType
+{
+    NONE = 0,
+    CONSOLE = 1,
+    WORLD_TEXT = 2,
+}
+
+public static class DebugTypeExtension
+{
+    public static bool HasDebugType(this DebugType debugMode, DebugType check)
+    {
+        return ((int)debugMode & (int)check) == (int)check;
+    }
 }
