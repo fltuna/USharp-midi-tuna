@@ -177,7 +177,6 @@ public class MidiPlayer : UdonSharpBehaviour
         if(channel != ACCEPTABLE_MIDI_CHANNEL)
             return;
 
-        notesPlayingInSameTime++;
         DebugPress(channel, number, velocity);
         FindAndPlay(number, velocity);
     }
@@ -187,7 +186,6 @@ public class MidiPlayer : UdonSharpBehaviour
         if(channel != ACCEPTABLE_MIDI_CHANNEL)
             return;
 
-        notesPlayingInSameTime--;
         DebugRelease(channel, number, velocity);
         // FindAndStop(number);
     }
@@ -320,6 +318,7 @@ public class MidiPlayer : UdonSharpBehaviour
         if(pressingKeys.ContainsKey($"{channel}-{number}-MIDI"))
             return;
 
+        notesPlayingInSameTime++;
         pressingKeys.Add($"{channel}-{number}-MIDI", $"MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
     }
 
@@ -335,6 +334,10 @@ public class MidiPlayer : UdonSharpBehaviour
             Debug.Log($"{LOG_PREFIX} MIDI Released: " + $"Channel: {channel} | MIDI: {number} | Romanized: {romanizedScale} | Velocity: {velocity}");
         }
 
+        if(!pressingKeys.ContainsKey($"{channel}-{number}-MIDI"))
+            return;
+
+        notesPlayingInSameTime--;
         pressingKeys.Remove($"{channel}-{number}-MIDI");
     }
 
