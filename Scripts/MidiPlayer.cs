@@ -53,6 +53,8 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private bool isScriptInitialized = false;
 
+    private byte notesPlayingInSameTime = 0;
+
     void Start()
     {
         Setup();
@@ -137,11 +139,13 @@ public class MidiPlayer : UdonSharpBehaviour
     {
         DebugPress(channel, number, velocity);
         FindAndPlay(number, velocity);
+        notesPlayingInSameTime++;
     }
 
     private void EmulateMidiNoteOff(int channel, int number, int velocity)
     {
         DebugRelease(channel, number, velocity);
+        notesPlayingInSameTime--;
     }
 
     private void EmulateMidiControlChange(int channel, int number, int value)
@@ -178,7 +182,7 @@ public class MidiPlayer : UdonSharpBehaviour
         else {
             globalCurrentSoundPriority++;
         }
-        pressingKeys.SetValue("CurrentPriority", $"Global Current Sound Priority: {globalCurrentSoundPriority}");
+        pressingKeys.SetValue("CurrentPriority", $"Global Current Sound Priority: {globalCurrentSoundPriority} | Notes playing in same time: {notesPlayingInSameTime}");
         return globalCurrentSoundPriority;
     }
 
