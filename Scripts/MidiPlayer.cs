@@ -335,7 +335,10 @@ public class MidiPlayer : UdonSharpBehaviour
         LAST_INPUTTED_MIDI[1] = Convert.ToSByte(number);
         LAST_INPUTTED_MIDI[2] = Convert.ToSByte(value);
         LAST_INPUTTED_MIDI[3] = Convert.ToSByte(midiType);
-        Debug.Log($"{LOG_PREFIX} LAST INPUTTED MIDI: {LAST_INPUTTED_MIDI[0]} {LAST_INPUTTED_MIDI[1]} {LAST_INPUTTED_MIDI[2]} {LAST_INPUTTED_MIDI[3]} ");
+
+        if(debugMode.HasDebugType(DebugType.CONSOLE))
+            Debug.Log($"{LOG_PREFIX} LAST INPUTTED MIDI: {LAST_INPUTTED_MIDI[0]} {LAST_INPUTTED_MIDI[1]} {LAST_INPUTTED_MIDI[2]} {LAST_INPUTTED_MIDI[3]} ");
+
         RequestSerialization();
         ResetLastInputtedMidi();
     }

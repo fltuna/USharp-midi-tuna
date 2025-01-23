@@ -479,7 +479,7 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 2250627163353263734}
   useIndividualSoundSources: 1
   audioSourcesParent: {fileID: 3591022494847303209}
-  debugMode: -1
+  debugMode: 2
   debugLogOutputTarget: {fileID: 1389876859789671504}
   ACCEPTABLE_MIDI_CHANNEL: 0
   ACCEPTABLE_MIDI_CCs: 40000000
