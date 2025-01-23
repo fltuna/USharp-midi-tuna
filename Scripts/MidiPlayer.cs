@@ -228,12 +228,10 @@ public class MidiPlayer : UdonSharpBehaviour
 
 
         audioSource.priority = UpdateSoundPriority();
-        // TODO()
-        // Use PlayOneShot() instead Play() for non clipped sound.
-        // audioSource.PlayOneShot(audioSource.clip);
 
         GameObject cloned = Instantiate(audioSource.gameObject);
         AudioSource clonedAudioSource = cloned.GetComponent<AudioSource>();
+        clonedAudioSource.volume = VelocityToVolume((byte)velocity);
         cloned.transform.SetParent(audioSourcesParent.transform);
 
         
@@ -254,7 +252,7 @@ public class MidiPlayer : UdonSharpBehaviour
             otherVoicesIndex = (otherVoicesIndex + 1) % (MAX_VOICES-RESERVED_SLOTS_BASS);
         }
 
-        audioSource.Play();
+        clonedAudioSource.Play();
     }
 
 
@@ -498,6 +496,13 @@ public class MidiPlayer : UdonSharpBehaviour
     private bool ShouldDebug()
     {
         return Utilities.IsValid(debugLogOutputTarget) && debugMode != DebugType.NONE;
+    }
+
+    private const float DEFAULT_VOLUME_VELOCITY = 100f;
+
+    private static float VelocityToVolume(byte velocity)
+    {
+        return velocity / DEFAULT_VOLUME_VELOCITY;
     }
 }
 
