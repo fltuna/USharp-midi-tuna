@@ -215,8 +215,10 @@ public class MidiPlayer : UdonSharpBehaviour
 
         AudioSource audioSource = GetAudioSourceFromRomanizedScale(romanizedScale);
 
-        if(audioSource == null && useIndividualSoundSources) {
-            Debug.LogWarning($"{LOG_PREFIX} Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
+        if(audioSource == null) {
+            if(useIndividualSoundSources) {
+                Debug.LogWarning($"{LOG_PREFIX} Failed to get AudioSource component of {romanizedScale}. cancelling the playback.");
+            }
             return;
         }
 
