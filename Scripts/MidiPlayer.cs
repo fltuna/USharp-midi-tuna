@@ -44,9 +44,6 @@ public class MidiPlayer : UdonSharpBehaviour
     [SerializeField, Header("What CC is acceptable for input?")]
     public int[] ACCEPTABLE_MIDI_CCs = {64};
 
-    [SerializeField, Header("Interval of Garbage Collection for disposed audio source objects. (seconds)")]
-    public float DISPOSED_AUDIO_SOURCE_GC_TIME = 15;
-
 
     [UdonSynced(UdonSyncMode.None)]
     // {Channel, number, velocity or value, MIDIType}
@@ -81,17 +78,12 @@ public class MidiPlayer : UdonSharpBehaviour
     // How many voices allowed to play in same time?
     // VRChat sound playback limit is around 30~40, and need to stop oldest sound.
     //
-    private const int MAX_VOICES = 35;
+    private const int MAX_VOICES = 30;
 
     //
     // MIDI number lower than this value is recognized as BASS in runtime.
     //
     public const int BASS_MIDI_CUTOFF = 48;
-
-    //
-    // Used for identifying the disposed audio source object.
-    //
-    private const string DISPOSED_AUDIO_SOURCE_OBJECT_NAME = "tuna-midi_dispose-target";
 
     private const string LOG_PREFIX = "[Tuna's U# Midi]";
 
@@ -239,41 +231,20 @@ public class MidiPlayer : UdonSharpBehaviour
         if(number < BASS_MIDI_CUTOFF) {
             AudioSource currentVoice = bassVoices[bassVoiceIndex];
             if(currentVoice != null) {
-                currentVoice.gameObject.name = DISPOSED_AUDIO_SOURCE_OBJECT_NAME;
+                Destroy(currentVoice);
             }
             bassVoices[bassVoiceIndex] = clonedAudioSource;
             bassVoiceIndex = (bassVoiceIndex + 1) % RESERVED_SLOTS_BASS;
         } else {
             AudioSource currentVoice = otherVoices[otherVoicesIndex];
             if(currentVoice != null) {
-                currentVoice.gameObject.name = DISPOSED_AUDIO_SOURCE_OBJECT_NAME;
+                Destroy(currentVoice);
             }
             otherVoices[otherVoicesIndex] = clonedAudioSource;
             otherVoicesIndex = (otherVoicesIndex + 1) % (MAX_VOICES-RESERVED_SLOTS_BASS);
         }
 
         clonedAudioSource.Play();
-    }
-
-
-    public void InstantiatedAudioSourceGC()
-    {
-        if(debugMode.HasDebugType(DebugType.GC_INFO))
-            Debug.Log($"{LOG_PREFIX} GC Started");
-
-        int objectsGarbageCollected = 0;
-
-        foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
-            if(child.gameObject.name.Equals(DISPOSED_AUDIO_SOURCE_OBJECT_NAME)) {
-                Destroy(child.gameObject);
-                objectsGarbageCollected++;
-            }
-        }
-
-        if(debugMode.HasDebugType(DebugType.GC_INFO))
-            Debug.Log($"{LOG_PREFIX} GC Done. Destroyed {objectsGarbageCollected} object(s). sending CustomEvent to do GC recursively");
-
-        SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
     }
 
     private AudioSource GetAudioSourceFromRomanizedScale(string romanizedScale)
@@ -447,7 +418,6 @@ public class MidiPlayer : UdonSharpBehaviour
             }
             
         }
-        SendCustomEventDelayedSeconds(nameof(InstantiatedAudioSourceGC), DISPOSED_AUDIO_SOURCE_GC_TIME);
         isScriptInitialized = true;
         Debug.Log($"{LOG_PREFIX} Script has been initialized successfully!");
     }
