@@ -85,7 +85,7 @@
 
 ### Debug Log Output Target
 
-もしデバッグモードのCONSOLEを使用したい場合は、Text Mesh Pro UGUIコンポーネントをここに入れてください。
+もしデバッグモードのWORLD_TEXTを使用したい場合は、Text Mesh Pro UGUIコンポーネントをここに入れてください。
 
 ### ACCEPTABLE MIDI CHANNEL
 

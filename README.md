@@ -85,7 +85,7 @@ Select debug mode.
 
 ### Debug Log Output Target
 
-If you want to use CONSOLE debug mode, You need to attach Text Mesh Pro UGUI component in here.
+If you want to use WORLD_TEXT debug mode, You need to attach Text Mesh Pro UGUI component in here.
 
 ### ACCEPTABLE MIDI CHANNEL
 
