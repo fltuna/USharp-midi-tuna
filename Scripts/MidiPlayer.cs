@@ -9,6 +9,7 @@ using VRC.SDK3.Midi;
 using VRC.SDKBase;
 using VRC.Udon;
 
+[UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
 public class MidiPlayer : UdonSharpBehaviour
 {
 
@@ -47,7 +48,7 @@ public class MidiPlayer : UdonSharpBehaviour
 
     [UdonSynced(UdonSyncMode.None)]
     // {Channel, number, velocity or value, MIDIType}
-    private sbyte[] LAST_INPUTTED_MIDI = {-1, -1, -1, -1};
+    private sbyte[] LAST_INPUTTED_MIDI = new sbyte[4];
 
     //
     // these value is used to avoid filling up the SoundSource's priority by a this script.
@@ -132,7 +133,7 @@ public class MidiPlayer : UdonSharpBehaviour
                 break;
 
             case MIDIType.CC:
-                EmulateMidiNoteOn(channel, number, value);
+                EmulateMidiControlChange(channel, number, value);
                 break;
 
             default:
@@ -328,20 +329,21 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private void SyncMidiInput(int channel, int number, int value, MIDIType midiType)
     {
-        LAST_INPUTTED_MIDI[0] = (sbyte) channel;
-        LAST_INPUTTED_MIDI[1] = (sbyte) number;
-        LAST_INPUTTED_MIDI[2] = (sbyte) value;
-        LAST_INPUTTED_MIDI[3] = (sbyte) MIDIType.PRESS;
+        LAST_INPUTTED_MIDI[0] = Convert.ToSByte(channel);
+        LAST_INPUTTED_MIDI[1] = Convert.ToSByte(number);
+        LAST_INPUTTED_MIDI[2] = Convert.ToSByte(value);
+        LAST_INPUTTED_MIDI[3] = Convert.ToSByte(midiType);
+        Debug.Log($"{LOG_PREFIX} LAST INPUTTED MIDI: {LAST_INPUTTED_MIDI[0]} {LAST_INPUTTED_MIDI[1]} {LAST_INPUTTED_MIDI[2]} {LAST_INPUTTED_MIDI[3]} ");
         RequestSerialization();
         ResetLastInputtedMidi();
     }
 
     private void ResetLastInputtedMidi()
     {
-        LAST_INPUTTED_MIDI[0] = -1;
-        LAST_INPUTTED_MIDI[1] = -1;
-        LAST_INPUTTED_MIDI[2] = -1;
-        LAST_INPUTTED_MIDI[3] = -1;
+        LAST_INPUTTED_MIDI[0] = Convert.ToSByte(-1);
+        LAST_INPUTTED_MIDI[1] = Convert.ToSByte(-1);
+        LAST_INPUTTED_MIDI[2] = Convert.ToSByte(-1);
+        LAST_INPUTTED_MIDI[3] = Convert.ToSByte(-1);
     }
 
     private bool isCCAllowed(int value)
@@ -383,6 +385,7 @@ public class MidiPlayer : UdonSharpBehaviour
     private void Setup()
     {
         Debug.Log($"{LOG_PREFIX} Initializing script...");
+        ResetLastInputtedMidi();
         if(useIndividualSoundSources) {
             Debug.Log($"{LOG_PREFIX} We are using individual sound samples!");
             foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
