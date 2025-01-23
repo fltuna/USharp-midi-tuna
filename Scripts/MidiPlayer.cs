@@ -434,7 +434,7 @@ public class MidiPlayer : UdonSharpBehaviour
                 return;
             }
 
-            for(int i = 0; i < (int)MidiScales.B8; i++) {
+            for(int i = MidiScalesExtensions.MIN_RANGE; i < MidiScalesExtensions.MAX_RANGE; i++) {
                 string romanizedScale = GetRomanizedScale(i);
                 GameObject instantiatedGameObject = Instantiate(instantiateTarget);
                 instantiatedGameObject.name = romanizedScale;

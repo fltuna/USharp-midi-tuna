@@ -1,3 +1,7 @@
+/// <summary>
+///  MidiScales uses FL Studio style,
+///  So center C note (midi 60) is C5. 
+/// </summary>
 public enum MidiScales
 {
     C0 = 0,
@@ -111,8 +115,22 @@ public enum MidiScales
 }
 public static class MidiScalesExtensions
 {
+    public const int MAX_RANGE = (int)MidiScales.B8;
+    public const int MIN_RANGE = (int)MidiScales.A1;
+
+
+    /// <summary>
+    ///  MidiScales uses FL Studio style,
+    ///  So center C note (midi 60) is C5. 
+    /// </summary>
     public static string GetName(int value)
     {
+        if(value > MAX_RANGE)
+            return GetName(MAX_RANGE);
+
+        if(value < MIN_RANGE)
+            return GetName(MIN_RANGE);
+
         switch (value)
         {
             case (int)MidiScales.C0: return "C0";
