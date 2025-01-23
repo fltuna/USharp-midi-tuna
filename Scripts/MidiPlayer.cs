@@ -52,14 +52,23 @@ public class MidiPlayer : UdonSharpBehaviour
     // {Channel, number, velocity or value, MIDIType}
     private sbyte[] LAST_INPUTTED_MIDI = {-1, -1, -1, -1};
 
-
-    private byte globalCurrentSoundPriority = 255;
+    //
+    // these value is used to avoid filling up the SoundSource's priority by a this script.
+    //
+    // total sum of globalSoundPriorityBaseOffset, RESERVED_SLOTS_BASS and MAX_VOICES is -
+    // - Should not be exceeds a 255. otherwise script will stop working.
+    private const byte globalSoundPriorityBaseOffset = 160;
+    private const byte globalSoundPriorityMax = RESERVED_SLOTS_BASS + MAX_VOICES;
+    private byte globalCurrentSoundPriority = globalSoundPriorityBaseOffset;
 
     private bool isScriptInitialized = false;
 
     private byte notesPlayingInSameTime = 0;
 
-
+    private AudioSource[] bassVoices = new AudioSource[RESERVED_SLOTS_BASS];
+    private AudioSource[] otherVoices = new AudioSource[MAX_VOICES-RESERVED_SLOTS_BASS];
+    private int bassVoiceIndex = 0;
+    private int otherVoicesIndex = 0;
 
     //
     // How many bass sound should be reserved?
@@ -86,11 +95,6 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private const string LOG_PREFIX = "[Tuna's U# Midi]";
 
-
-    private AudioSource[] bassVoices = new AudioSource[RESERVED_SLOTS_BASS];
-    private AudioSource[] otherVoices = new AudioSource[MAX_VOICES-RESERVED_SLOTS_BASS];
-    private int bassVoiceIndex = 0;
-    private int otherVoicesIndex = 0;
 
     void Start()
     {
@@ -282,11 +286,9 @@ public class MidiPlayer : UdonSharpBehaviour
 
     private byte UpdateSoundPriority()
     {
-        if(globalCurrentSoundPriority == byte.MaxValue){
-            globalCurrentSoundPriority = 0;
-        }
-        else {
-            globalCurrentSoundPriority++;
+        globalCurrentSoundPriority++;
+        if(globalCurrentSoundPriority >= globalSoundPriorityMax + globalSoundPriorityBaseOffset) {
+            globalCurrentSoundPriority = globalSoundPriorityBaseOffset;
         }
         pressingKeys.SetValue("CurrentPriority", $"Global Current Sound Priority: {globalCurrentSoundPriority}");
         return globalCurrentSoundPriority;
