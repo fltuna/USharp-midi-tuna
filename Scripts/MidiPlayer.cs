@@ -489,7 +489,6 @@ public enum DebugType
     NONE = 0,
     CONSOLE = 1,
     WORLD_TEXT = 2,
-    GC_INFO = 4,
 }
 
 public static class DebugTypeExtension
