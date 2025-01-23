@@ -5,7 +5,7 @@
 - [tuna's USharp MIDI](#tunas-usharp-midi)
   - [セットアップ](#%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97)
     - [音声フォルダの構成](#%E9%9F%B3%E5%A3%B0%E3%83%95%E3%82%A9%E3%83%AB%E3%83%80%E3%81%AE%E6%A7%8B%E6%88%90)
-  - [設定小目](#%E8%A8%AD%E5%AE%9A%E5%B0%8F%E7%9B%AE)
+  - [設定項目](#%E8%A8%AD%E5%AE%9A%E9%A0%85%E7%9B%AE)
     - [Use individual Sound Sources](#use-individual-sound-sources)
     - [Debug Mode](#debug-mode)
     - [Debug Log Output Target](#debug-log-output-target)
@@ -69,7 +69,7 @@
 
 
 
-## 設定小目
+## 設定項目
 
 ### Use individual Sound Sources
 
