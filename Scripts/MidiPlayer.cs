@@ -86,7 +86,9 @@ public class MidiPlayer : UdonSharpBehaviour
     //
     public const int BASS_MIDI_CUTOFF = 48;
 
-    private const string LOG_PREFIX = "[Tuna's U# Midi]";
+    private string LOG_PREFIX = $"[Tuna's U# Midi v{TMIDI_VERSION}]";
+
+    private const string TMIDI_VERSION = "0.0.1";
 
 
     void Start()
