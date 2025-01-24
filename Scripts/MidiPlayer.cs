@@ -19,7 +19,6 @@ public class MidiPlayer : UdonSharpBehaviour
     private DataDictionary detectedCCs = new DataDictionary();
 
 
-    // When this
     [
         SerializeField, 
         Header("Use individual samples instead of pitched C5 sound?"),
@@ -234,14 +233,14 @@ public class MidiPlayer : UdonSharpBehaviour
         if(number < BASS_MIDI_CUTOFF) {
             AudioSource currentVoice = bassVoices[bassVoiceIndex];
             if(currentVoice != null) {
-                Destroy(currentVoice);
+                Destroy(currentVoice.gameObject);
             }
             bassVoices[bassVoiceIndex] = clonedAudioSource;
             bassVoiceIndex = (bassVoiceIndex + 1) % RESERVED_SLOTS_BASS;
         } else {
             AudioSource currentVoice = otherVoices[otherVoicesIndex];
             if(currentVoice != null) {
-                Destroy(currentVoice);
+                Destroy(currentVoice.gameObject);
             }
             otherVoices[otherVoicesIndex] = clonedAudioSource;
             otherVoicesIndex = (otherVoicesIndex + 1) % (MAX_VOICES-RESERVED_SLOTS_BASS);
@@ -391,6 +390,7 @@ public class MidiPlayer : UdonSharpBehaviour
     {
         Debug.Log($"{LOG_PREFIX} Initializing script...");
         ResetLastInputtedMidi();
+
         if(useIndividualSoundSources) {
             Debug.Log($"{LOG_PREFIX} We are using individual sound samples!");
             foreach(var child in audioSourcesParent.GetComponentsInChildren<AudioSource>()) {
@@ -426,6 +426,7 @@ public class MidiPlayer : UdonSharpBehaviour
             }
             
         }
+
         isScriptInitialized = true;
         Debug.Log($"{LOG_PREFIX} Script has been initialized successfully!");
     }
