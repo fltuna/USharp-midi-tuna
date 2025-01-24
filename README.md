@@ -17,7 +17,7 @@
 
 ## Features
 
-- Synced realtime MIDI Playback
+- Synced realtime MIDI Playback (Syncing is not implement yet)
 - Experimental Velocity support
 - Supports custom sound (Individual or pitched)
 
