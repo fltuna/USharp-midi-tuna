@@ -3,16 +3,23 @@
 # tuna's USharp MIDI
 
 - [tuna's USharp MIDI](#tunas-usharp-midi)
-  - [セットアップ](#%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97)
-    - [音声フォルダの構成](#%E9%9F%B3%E5%A3%B0%E3%83%95%E3%82%A9%E3%83%AB%E3%83%80%E3%81%AE%E6%A7%8B%E6%88%90)
-  - [設定項目](#%E8%A8%AD%E5%AE%9A%E9%A0%85%E7%9B%AE)
+  - [機能](#機能)
+  - [セットアップ](#セットアップ)
+    - [音声フォルダの構成](#音声フォルダの構成)
+  - [設定項目](#設定項目)
     - [Use individual Sound Sources](#use-individual-sound-sources)
     - [Debug Mode](#debug-mode)
     - [Debug Log Output Target](#debug-log-output-target)
     - [ACCEPTABLE MIDI CHANNEL](#acceptable-midi-channel)
     - [ACCEPTABLE MIDI CCS](#acceptable-midi-ccs)
-  - [VRChatで使用する際の問題](#vrchat%E3%81%A7%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B%E9%9A%9B%E3%81%AE%E5%95%8F%E9%A1%8C)
+  - [VRChatで使用する際の問題](#vrchatで使用する際の問題)
 
+
+## 機能
+
+- MIDIの再生 (リアルタイムで同期されます)
+- 実験的なVelocityのサポート
+- カスタムサウンド (個別で用意、もしくはピッチ変更で音階を確保)
 
 ## セットアップ
 

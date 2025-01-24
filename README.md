@@ -3,6 +3,7 @@
 # tuna's USharp MIDI
 
 - [tuna's USharp MIDI](#tunas-usharp-midi)
+  - [Features](#features)
   - [Setup](#setup)
     - [Sounds Folder Structure](#sounds-folder-structure)
   - [Settings](#settings)
@@ -13,6 +14,12 @@
     - [ACCEPTABLE MIDI CCS](#acceptable-midi-ccs)
   - [Problem in VRChat](#problem-in-vrchat)
 
+
+## Features
+
+- Synced realtime MIDI Playback
+- Experimental Velocity support
+- Supports custom sound (Individual or pitched)
 
 ## Setup
 
