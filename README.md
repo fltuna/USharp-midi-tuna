@@ -3,6 +3,7 @@
 # tuna's USharp MIDI
 
 - [tuna's USharp MIDI](#tunas-usharp-midi)
+  - [Caution](#caution)
   - [Features](#features)
   - [Setup](#setup)
     - [Sounds Folder Structure](#sounds-folder-structure)
@@ -14,6 +15,10 @@
     - [ACCEPTABLE MIDI CCS](#acceptable-midi-ccs)
   - [Problem in VRChat](#problem-in-vrchat)
 
+
+## Caution
+
+This script is rewriting in progress. So not working or might be break project!
 
 ## Features
 

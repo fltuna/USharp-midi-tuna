@@ -3,6 +3,7 @@
 # tuna's USharp MIDI
 
 - [tuna's USharp MIDI](#tunas-usharp-midi)
+  - [注意](#%E6%B3%A8%E6%84%8F)
   - [機能](#%E6%A9%9F%E8%83%BD)
   - [セットアップ](#%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97)
     - [音声フォルダの構成](#%E9%9F%B3%E5%A3%B0%E3%83%95%E3%82%A9%E3%83%AB%E3%83%80%E3%81%AE%E6%A7%8B%E6%88%90)
@@ -14,6 +15,10 @@
     - [ACCEPTABLE MIDI CCS](#acceptable-midi-ccs)
   - [VRChatで使用する際の問題](#vrchat%E3%81%A7%E4%BD%BF%E7%94%A8%E3%81%99%E3%82%8B%E9%9A%9B%E3%81%AE%E5%95%8F%E9%A1%8C)
 
+
+## 注意
+
+このスクリプトは現在書き直し途中なので、動かなかったりプロジェクトを破壊する可能性があります！
 
 ## 機能
 
